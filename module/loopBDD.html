@@ -16,66 +16,46 @@
   <div id="map"></div>
 
   <script>
-    var map;
-    fetch('http://192.168.64.210:3000/markers')
+let map;
+let markers = [];
+
+function updateMarkers() {
+  fetch('http://192.168.64.210:3000/markers')
     .then((response) => {
       return response.json();
     })
     .then((data) => {
-
-      //map = L.map('map').setView([marker.latitude, marker.longitude], 13);
-      map = L.map('map').setView([data[0].latitude, data[0].longitude], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
-
-      //console.log(data);
-/*
-      data.forEach(function(coord, index) {
-      {
-          L.marker([(coord.latitude), (coord.longitude)]).addTo(map)
-        .bindPopup('A pretty CSS popup.<br> Easily customizable.')
-        //.openPopup();
+      // Si la carte n'est pas encore initialisée, initialisez-la avec les coordonnées du premier marqueur
+      if (!map) {
+        map = L.map('map').setView([data[0].latitude, data[0].longitude], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
       }
-      
-      //let markers = data;
-      })
-*/
-console.log(data[0]);
 
-let latitude = data[0].latitude;
-let longitude = data[0].longitude;
+      // Supprimer les anciens marqueurs de la carte
+      markers.forEach(marker => {
+        map.removeLayer(marker);
+      });
+      markers = [];
 
-console.log(latitude);
-
-// Créer le marqueur initial
-let marker = L.marker([latitude, longitude]).addTo(map)
-  .bindPopup('A pretty CSS popup.<br> Easily customizable.');
-
-// Fonction pour ajuster la latitude après une minute
-function ajusterLatitude() {
-  latitude ++;
-  marker.setLatLng([latitude, longitude]);
-  console.log(latitude)
-  
+      // Ajouter les nouveaux marqueurs avec les coordonnées mises à jour
+      data.forEach((coord) => {
+        const marker = L.marker([coord.latitude, coord.longitude]).addTo(map)
+          .bindPopup('A pretty CSS popup.<br> Easily customizable.');
+        markers.push(marker);
+      });
+    })
+    .catch((error) => {
+      console.error('Error fetching markers:', error);
+    });
 }
 
-// Appeler la fonction `ajusterLatitude` après une minute
-setInterval(ajusterLatitude, 3000); // 60000 ms = 1 minute
+// Appeler la fonction pour la première fois
+updateMarkers();
 
-
-    //.catch(function(error) {
-    //  console.log(error);
-    //})
-  });
-
-
-/*
-    var marker = {
-        "latitude": 49.5100,
-        "longitude": 2.4385
-    };
-*/
+// Actualiser les marqueurs toutes les 1 minute
+setInterval(updateMarkers, 60000); // 60000 milliseconds = 1 minute
 
     // Utiliser fetch pour obtenir les données de l'API
     fetch('http://192.168.64.210:3000/markers')
