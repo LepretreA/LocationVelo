@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Map with Database Markers</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Leaflet Map with Define Markers</h1>
+  <div id="map"></div>
+
+  <script>
+      
+      //affichage de la map et centrage de la camera
+      map = L.map('map').setView([50.080, 1.822], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+    var redIcon = L.icon({
+    iconUrl: '../src/redBike.png',
+    iconSize:     [40, 40], // size of the icon
+    iconAnchor:   [20, 20], // point of the icon which will correspond to marker's location
+    popupAnchor:  [20, 0] // point from which the popup should open relative to the iconAnchor
+    });
+
+    var greenIcon = L.icon({
+    iconUrl: '../src/GBike.png',
+    iconSize:     [40, 40], // size of the icon
+    iconAnchor:   [20, 20], // point of the icon which will correspond to marker's location
+    popupAnchor:  [20, 0] // point from which the popup should open relative to the iconAnchor
+    });
+
+
+  // Coordonnées du polygone (ici le camping)
+var Camping = [
+  [50.079239, 1.822605],
+  [50.079896, 1.822127],
+  [50.079981, 1.822355],
+  [50.080548, 1.821919],
+  [50.080841, 1.821919],
+  [50.081363, 1.821585],
+  [50.081540, 1.822307],
+  [50.079710, 1.823973]
+];
+
+//affichage visuel du polygon sur la map
+var polygon = L.polygon(Camping, {color: 'red'}).addTo(map);
+
+// Fonction pour vérifier si un point est à l'intérieur du polygone
+function pointInsidePolygon(point, poly) {
+  var x = point[0], y = point[1];
+  var inside = false;
+  for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    var xi = poly[i][0], yi = poly[i][1];
+    var xj = poly[j][0], yj = poly[j][1];
+
+    var intersect = ((yi > y) != (yj > y)) &&
+      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// Point à vérifier (par exemple, les coordonnées d'un marqueur)
+//a modifier pour faire les test
+var pointToCheck = [50.081, 1.822];
+
+//L.marker(pointToCheck,{icon: redIcon}).addTo(map)
+
+// Vérifier si le point se trouve à l'intérieur du polygone
+var isInside = pointInsidePolygon(pointToCheck, Camping);
+
+// Afficher le résultat
+if (isInside) {
+   console.log("Le point est à l'intérieur du polygone.");
+   L.marker(pointToCheck,{icon: greenIcon}).addTo(map)
+} else {
+  console.log("Le point est à l'extérieur du polygone.");
+  L.marker(pointToCheck,{icon: redIcon}).addTo(map)
+}
+
+  </script>
+</body>
+</html>
