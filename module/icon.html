@@ -32,6 +32,13 @@
     popupAnchor:  [20, 0] // point from which the popup should open relative to the iconAnchor
     });
 
+    var WarningIcon = L.icon({
+    iconUrl: '../src/Warning-mark.png',
+    iconSize:     [40, 40], // size of the icon
+    iconAnchor:   [0, 0], // point of the icon which will correspond to marker's location
+    popupAnchor:  [20, 0] // point from which the popup should open relative to the iconAnchor
+    });
+
     var bleuIcon = L.icon({
     iconUrl: '../src/BleuBike.png',
     iconSize:     [40, 40], // size of the icon
@@ -67,6 +74,9 @@
 
       L.marker([49.60, 2.40],{icon: greenIcon}).addTo(map)
         .bindPopup('A pretty CSS popup.<br> Easily customizable.')
+
+      L.marker([49.50, 2.40],{icon: WarningIcon}).addTo(map)
+      .bindPopup('A pretty CSS popup.<br> Easily customizable.')
 
     .catch(function(error) {
       console.log(error);
