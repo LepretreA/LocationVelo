@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Leaflet Map Module loopBDD</title>
+  <title>Leaflet Map Module POPUP</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
@@ -20,14 +20,14 @@ let map;
 let markers = [];
 
 function updateMarkers() {
-  fetch('http://192.168.64.210:3000/markers')
+  fetch('http://192.168.64.210:3000/Proprietaire')
     .then((response) => {
       return response.json();
     })
     .then((data) => {
       // Si la carte n'est pas encore initialisée, initialisez-la avec les coordonnées du premier marqueur
       if (!map) {
-        map = L.map('map').setView([data[0].latitude, data[0].longitude], 13);
+        map = L.map('map').setView([data[0].latitude, data[0].longitude], 5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -42,7 +42,7 @@ function updateMarkers() {
       // Ajouter les nouveaux marqueurs avec les coordonnées mises à jour
       data.forEach((coord) => {
         const marker = L.marker([coord.latitude, coord.longitude]).addTo(map)
-          .bindPopup('A pretty CSS popup.<br> Easily customizable.');
+          .bindPopup('Velo Numero :'+ coord.VeloID + '</br>Nom :'+ coord.Nom + '</br>Prenom :'+ coord.Prenom);
         markers.push(marker);
       });
     })
