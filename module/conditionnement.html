@@ -41,8 +41,23 @@ function updateMarkers() {
 
       // Ajouter les nouveaux marqueurs avec les coordonnées mises à jour
       data.forEach((coord) => {
-        const marker = L.marker([coord.latitude, coord.longitude]).addTo(map)
-          .bindPopup('Velo Numero :'+ coord.VeloID + '</br>Nom :'+ coord.Nom + '</br>Prenom :'+ coord.Prenom);
+        let markerColor = 'green'; // Couleur par défaut
+        let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
+
+        // Vérifier si IDUser, Nom ou Prenom est null
+        if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
+          markerColor = 'red';
+          popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+        }
+
+        const marker = L.marker([coord.latitude, coord.longitude], {
+          icon: L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background-color: ${markerColor};">${coord.VeloID}</div>`
+          })
+        }).addTo(map)
+          .bindPopup(popupText);
+
         markers.push(marker);
       });
     })
@@ -50,6 +65,7 @@ function updateMarkers() {
       console.error('Error fetching markers:', error);
     });
 }
+
 
 // Appeler la fonction pour la première fois
 updateMarkers();
