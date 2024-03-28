@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Map Module POPUP</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 850px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Leaflet Map with Database Markers</h1>
+  <div id="map"></div>
+
+  <script>
+let map;
+let markers = [];
+
+// Définir les icônes personnalisées
+var purpleIcon = L.icon({
+  iconUrl: '../src/PurpleBike.png',
+  iconSize: [40, 40], // taille de l'icône
+  iconAnchor: [20, 40], // point de l'icône correspondant à l'emplacement du marqueur
+  popupAnchor: [0, -40] // point à partir duquel la popup doit s'ouvrir par rapport à l'icône
+});
+
+// Définir les icônes personnalisées
+var greenIcon = L.icon({
+  iconUrl: '../src/GBike.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+var redIcon = L.icon({
+  iconUrl: '../src/redBike.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+// Tableau pour stocker les coordonnées des vélos
+let bikesCoordinates = [];
+
+function updateMarkers() {
+  fetch('http://192.168.64.210:3000/Proprietaire')
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      // Si la carte n'est pas encore initialisée, initialisez-la avec les coordonnées du premier marqueur
+      if (!map) {
+        map = L.map('map').setView([data[0].latitude, data[0].longitude], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+      }
+
+      // Supprimer les anciens marqueurs de la carte
+      markers.forEach(marker => {
+        map.removeLayer(marker);
+      });
+      markers = [];
+
+      // Ajouter les nouveaux marqueurs avec les coordonnées mises à jour
+      data.forEach((coord) => {
+        let icon = greenIcon;
+        let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
+
+        // Vérifier si IDUser, Nom ou Prenom est null
+        if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
+          icon = redIcon;
+          popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+        }
+
+        const marker = L.marker([coord.latitude, coord.longitude], { icon: icon }).addTo(map)
+          .bindPopup(popupText);
+
+        // Stocker les coordonnées du vélo dans la variable bikeCoordinates
+        let bikeCoordinates = {
+          VeloID: coord.VeloID,
+          latitude: coord.latitude,
+          longitude: coord.longitude
+        };
+
+        // Vérifier si les coordonnées du vélo ont changé
+        let bikeMoved = checkIfBikeMoved(bikeCoordinates);
+
+        // Mettre à jour les coordonnées stockées
+        updateStoredCoordinates(bikeCoordinates);
+
+        markers.push(marker);
+
+        // Afficher le message approprié dans la console
+        if (bikeMoved) {
+          console.log(`Le vélo ${coord.VeloID} a bougé`);
+        } else {
+          console.log(`Le vélo ${coord.VeloID} n'a pas bougé`);
+        }
+      });
+    })
+    .catch((error) => {
+      console.error('Error fetching markers:', error);
+    });
+}
+
+// Fonction pour vérifier si les coordonnées du vélo ont changé
+function checkIfBikeMoved(newCoordinates) {
+  for (let i = 0; i < bikesCoordinates.length; i++) {
+    if (
+      bikesCoordinates[i].VeloID === newCoordinates.VeloID &&
+      (bikesCoordinates[i].latitude !== newCoordinates.latitude ||
+        bikesCoordinates[i].longitude !== newCoordinates.longitude)
+    ) {
+      return true; // Le vélo a bougé
+    }
+  }
+  return false; // Le vélo n'a pas bougé
+}
+
+// Fonction pour mettre à jour les coordonnées stockées
+function updateStoredCoordinates(newCoordinates) {
+  let index = bikesCoordinates.findIndex(
+    (bike) => bike.VeloID === newCoordinates.VeloID
+  );
+  if (index !== -1) {
+    bikesCoordinates[index] = newCoordinates;
+  } else {
+    bikesCoordinates.push(newCoordinates);
+  }
+}
+
+
+
+
+// Appeler la fonction pour la première fois
+updateMarkers();
+
+// Actualiser les marqueurs toutes les 1 minute
+setInterval(updateMarkers, 6000); // 60000 milliseconds = 1 minute 6000 milliseconds = 6 seconde
+
+    // Utiliser fetch pour obtenir les données de l'API
+    fetch('http://192.168.64.210:3000/markers')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erreur HTTP, statut ' + response.status);
+        }
+        return response.json();
+      })
+      .catch(error => {
+        console.error('Erreur lors de la récupération des données:', error);
+      });
+
+
+  </script>
+</body>
+</html>
