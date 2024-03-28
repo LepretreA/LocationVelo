@@ -6,7 +6,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
     #map {
-      height: 500px;
+      height: 850px;
       width: 100%;
     }
   </style>
@@ -21,7 +21,15 @@ let markers = [];
 
 // Définir les icônes personnalisées
 var greenIcon = L.icon({
-  iconUrl: '../src/GBike.png',
+  iconUrl: '../src/greenBike.png',
+  iconSize: [40, 40], // taille de l'icône
+  iconAnchor: [20, 40], // point de l'icône correspondant à l'emplacement du marqueur
+  popupAnchor: [0, -40] // point à partir duquel la popup doit s'ouvrir par rapport à l'icône
+});
+
+
+var purpleIcon = L.icon({
+  iconUrl: '../src/PurpleBike.png',
   iconSize: [40, 40], // taille de l'icône
   iconAnchor: [20, 40], // point de l'icône correspondant à l'emplacement du marqueur
   popupAnchor: [0, -40] // point à partir duquel la popup doit s'ouvrir par rapport à l'icône
