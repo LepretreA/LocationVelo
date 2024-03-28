@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Map Module POPUP</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 850px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Leaflet Map with Database Markers</h1>
+  <div id="map"></div>
+
+  <script>
+let map;
+let markers = [];
+
+// Définir les icônes personnalisées
+var greenIcon = L.icon({
+  iconUrl: '../src/greenBike.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+var redIcon = L.icon({
+  iconUrl: '../src/redBike.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+var purpleIcon = L.icon({
+  iconUrl: '../src/purpleBike.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+// Tableau pour stocker les coordonnées des vélos avec leur historique
+let bikesCoordinates = [];
+
+function updateMarkers() {
+  fetch('http://192.168.64.210:3000/Proprietaire')
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      // Si la carte n'est pas encore initialisée, initialisez-la avec les coordonnées du premier marqueur
+      if (!map) {
+        map = L.map('map').setView([data[0].latitude, data[0].longitude], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+      }
+
+      // Supprimer les anciens marqueurs de la carte
+      markers.forEach(marker => {
+        map.removeLayer(marker);
+      });
+      markers = [];
+
+      // Pour chaque vélo
+      data.forEach((coord) => {
+        let icon = greenIcon;
+        let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
+
+        // Vérifier si IDUser, Nom ou Prenom est null
+        if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
+          icon = redIcon;
+          popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+        }
+
+        const marker = L.marker([coord.latitude, coord.longitude], { icon: icon }).addTo(map)
+          .bindPopup(popupText);
+
+        // Recherche du vélo dans bikesCoordinates
+        let bikeIndex = bikesCoordinates.findIndex(bike => bike.VeloID === coord.VeloID);
+
+        // Si le vélo n'est pas trouvé, on l'ajoute avec son historique vide
+        if (bikeIndex === -1) {
+          bikesCoordinates.push({
+            VeloID: coord.VeloID,
+            history: [{
+              latitude: coord.latitude,
+              longitude: coord.longitude
+            }]
+          });
+        } else {
+          // Sinon, on ajoute la nouvelle position à son historique
+          bikesCoordinates[bikeIndex].history.push({
+            latitude: coord.latitude,
+            longitude: coord.longitude
+          });
+
+          // Garder seulement les 3 dernières positions dans l'historique
+          if (bikesCoordinates[bikeIndex].history.length > 3) {
+            bikesCoordinates[bikeIndex].history.shift(); // Supprimer la plus ancienne position
+          }
+
+          // Vérifier si les 3 dernières positions du vélo sont identiques et son icône est vert
+          if (areLastThreePositionsSame(bikesCoordinates[bikeIndex].history) && icon === greenIcon) {
+            console.log(`Changement d'icône pour VeloID: ${coord.VeloID}`);
+            marker.setIcon(purpleIcon);
+          }
+        }
+
+        markers.push(marker);
+
+        // Afficher le message approprié dans la console
+        console.log(`VeloID: ${coord.VeloID}`);
+        console.log(`Icon avant condition: ${icon === greenIcon ? 'greenIcon' : 'not greenIcon'}`);
+        console.log(`Positions: `, bikesCoordinates[bikeIndex].history);
+      });
+    })
+    .catch((error) => {
+      console.error('Error fetching markers:', error);
+    });
+}
+
+// Fonction pour vérifier si les 3 dernières positions sont identiques
+function areLastThreePositionsSame(history) {
+  if (history.length < 3) {
+    return false; // Pas assez de points pour comparer
+  }
+
+  let lastPosition = history[history.length - 1];
+  let secondLastPosition = history[history.length - 2];
+  let thirdLastPosition = history[history.length - 3];
+
+  if (
+    lastPosition.latitude === secondLastPosition.latitude &&
+    lastPosition.longitude === secondLastPosition.longitude &&
+    lastPosition.latitude === thirdLastPosition.latitude &&
+    lastPosition.longitude === thirdLastPosition.longitude
+  ) {
+    return true; // Les 3 dernières positions sont identiques
+  }
+
+  return false; // Les 3 dernières positions ne sont pas identiques
+}
+
+
+
+// Appeler la fonction pour la première fois
+updateMarkers();
+
+// Actualiser les marqueurs toutes les 1 minute
+setInterval(updateMarkers, 6000); // 60000 milliseconds = 1 minute 6000 milliseconds = 6 seconde
+
+    // Utiliser fetch pour obtenir les données de l'API
+    fetch('http://192.168.64.210:3000/markers')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erreur HTTP, statut ' + response.status);
+        }
+        return response.json();
+      })
+      .catch(error => {
+        console.error('Erreur lors de la récupération des données:', error);
+      });
+
+
+  </script>
+</body>
+</html>
