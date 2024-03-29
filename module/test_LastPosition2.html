@@ -41,6 +41,13 @@ var purpleIcon = L.icon({
   popupAnchor: [0, -40]
 });
 
+var WarningIcon = L.icon({
+  iconUrl: '../src/Warning-mark.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
 // Tableau pour stocker les coordonnées des vélos avec leur historique
 let bikesCoordinates = [];
 
@@ -104,17 +111,24 @@ function updateMarkers() {
 
           // Vérifier si les 3 dernières positions du vélo sont identiques et son icône est vert
           if (areLastThreePositionsSame(bikesCoordinates[bikeIndex].history) && icon === greenIcon) {
-            console.log(`Changement d'icône pour VeloID: ${coord.VeloID}`);
+            //console.log(`Changement d'icône pour VeloID: ${coord.VeloID}`);
             marker.setIcon(purpleIcon);
           }
+
+          // Vérifier si les 2 dernières positions du vélo sont différente et son icône est rouge
+          if (areLastTwoPositionsNotSame(bikesCoordinates[bikeIndex].history) && icon === redIcon) {
+          //console.log(`Changement d'icône pour VeloID: ${coord.VeloID}`);
+          marker.setIcon(WarningIcon);
+          }
+
         }
 
         markers.push(marker);
 
         // Afficher le message approprié dans la console
-        console.log(`VeloID: ${coord.VeloID}`);
-        console.log(`Icon avant condition: ${icon === greenIcon ? 'greenIcon' : 'not greenIcon'}`);
-        console.log(`Positions: `, bikesCoordinates[bikeIndex].history);
+        //console.log(`VeloID: ${coord.VeloID}`);
+        //console.log(`Icon avant condition: ${icon === greenIcon ? 'greenIcon' : 'not greenIcon'}`);
+        //console.log(`Positions: `, bikesCoordinates[bikeIndex].history);
       });
     })
     .catch((error) => {
@@ -144,13 +158,31 @@ function areLastThreePositionsSame(history) {
   return false; // Les 3 dernières positions ne sont pas identiques
 }
 
+// Fonction pour vérifier si les 3 dernières positions sont identiques
+function areLastTwoPositionsNotSame(history) {
+  if (history.length < 3) {
+    return false; // Pas assez de points pour comparer
+  }
+
+  let lastPosition = history[history.length - 1];
+  let secondLastPosition = history[history.length - 2];
+
+  if (
+    lastPosition.latitude != secondLastPosition.latitude ||
+    lastPosition.longitude != secondLastPosition.longitude 
+  ) {
+    return true; // Les 2 dernières positions sont différente
+  }
+
+  return false; // Les 2 dernières positions sont identique
+}
 
 
 // Appeler la fonction pour la première fois
 updateMarkers();
 
 // Actualiser les marqueurs toutes les 1 minute
-setInterval(updateMarkers, 6000); // 60000 milliseconds = 1 minute 6000 milliseconds = 6 seconde
+setInterval(updateMarkers, 1000); // 60000 milliseconds = 1 minute 6000 milliseconds = 6 seconde
 
     // Utiliser fetch pour obtenir les données de l'API
     fetch('http://192.168.64.210:3000/markers')
