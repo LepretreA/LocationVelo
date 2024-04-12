@@ -69,7 +69,7 @@
     ];
 
     //affichage visuel du polygon sur la map
-    //var polygon = L.polygon(Camping, {color: 'black'}).addTo(map);
+    //var polygon = L.polygon(Camping, {color: 'red'}).addTo(map);
 
     function pointInsidePolygon(point, poly) {
       var x = point[0], y = point[1];
@@ -96,6 +96,7 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
+            var polygon = L.polygon(Camping, {color: 'black'}).addTo(map);
           }
 
           markers.forEach(marker => {
@@ -258,6 +259,9 @@
       [50.081540, 1.822307],
       [50.079710, 1.823973]
     ];
+
+    //affichage visuel du polygon sur la map
+    var polygon = L.polygon(Camping, {color: 'black'}).addTo(map);
 
     function pointInsidePolygon(point, poly) {
       var x = point[0], y = point[1];
