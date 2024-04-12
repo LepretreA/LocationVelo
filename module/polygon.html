@@ -18,34 +18,22 @@
   <script>
     var map;
     var latlngs = [[37, -109.05],[41, -109.03],[42, -105.02],[41, -102.05],[37, -102.04]];
+    // Zone du camping Porte de Baie de somme
+    // var latlngs = [[50.079239, 1.822605],[50.079896, 1.822127],[50.079981, 1.822355],[50.080548, 1.821919],[50.080841, 1.821919],[50.081363, 1.821585],[50.081540, 1.822307],[50.079710, 1.823973]];
 
-    //Zone du camping Porte de Baie de somme
-    //var latlngs = [[50.079239, 1.822605],[50.079896, 1.822127],[50.079981, 1.822355],[50.080548, 1.821919],[50.080841, 1.821919],[50.081363, 1.821585],[50.081540, 1.822307],[50.079710, 1.823973]];
+    // Définition de la fonction Polygon()
+    function Polygon() {
 
-    // zoom the map to the polygon
-    //map.fitBounds(polygon.getBounds());
-
-      //map = L.map('map').setView([marker.latitude, marker.longitude], 13);
       map = L.map('map').setView([38, -105], 5);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
       var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
-      //let markers = data;
-      
-      L.marker([49.50, 2.30],{icon: redIcon}).addTo(map)
-        .bindPopup('A pretty CSS popup.<br> Easily customizable.')
+    }
 
-      L.marker([49.60, 2.40],{icon: greenIcon}).addTo(map)
-        .bindPopup('A pretty CSS popup.<br> Easily customizable.')
-
-    .catch(function(error) {
-      console.log(error);
-    });
-
-
-
+    // Appel de la fonction Polygon()
+    Polygon();
   </script>
 </body>
 </html>
