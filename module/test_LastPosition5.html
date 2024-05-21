@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Map Module POPUP</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 850px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Leaflet Map with Database Markers</h1>
+  <div id="map"></div>
+  <div id="alertButtonDiv"></div>
+
+  <script>
+    let map;
+    let markers = [];
+    let bikesCoordinates = [];
+    let bikesAlerte = [];
+
+        // Créez une instance de WebSocket
+        const ws = new WebSocket('ws://192.168.64.210:3000/bikes');
+
+// Écoutez l'événement 'open' pour savoir quand la connexion WebSocket est établie
+ws.addEventListener('open', () => {
+  console.log('Connexion WebSocket établie');
+});
+
+// Écoutez l'événement 'message' pour recevoir les mises à jour des coordonnées des vélos
+ws.addEventListener('message', (event) => {
+const data = JSON.parse(event.data);
+// Assurez-vous que les données sont un tableau d'objets
+if (Array.isArray(data)) {
+updateMarkers(data);
+} else {
+console.error("Les données reçues ne sont pas au format attendu");
+}
+});
+
+// Écoutez l'événement 'close' pour savoir quand la connexion WebSocket est fermée
+ws.addEventListener('close', () => {
+  console.log('Connexion WebSocket fermée');
+});
+
+// Créez la carte Leaflet et ajoutez la couche de tuiles
+map = L.map('map').setView([47.378418, 4.537693], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// Écoutez l'événement 'load' de la carte pour vous assurer qu'elle est complètement chargée avant d'ajouter les marqueurs
+map.on('load', () => {
+  ws.send('ready');
+});
+
+
+    var greenIcon = L.icon({
+      iconUrl: '../src/greenBike.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    var redIcon = L.icon({
+      iconUrl: '../src/redBike.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    var purpleIcon = L.icon({
+      iconUrl: '../src/purpleBike.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    var warningIcon = L.icon({
+      iconUrl: '../src/Warning-mark.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    var orangeIcon = L.icon({
+      iconUrl: '../src/orangeBike.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    var Camping = [
+      [50.079239, 1.822605],
+      [50.079896, 1.822127],
+      [50.079981, 1.822355],
+      [50.080548, 1.821919],
+      [50.080841, 1.821919],
+      [50.081363, 1.821585],
+      [50.081540, 1.822307],
+      [50.079710, 1.823973]
+    ];
+
+    //affichage visuel du polygon sur la map
+    var polygon = L.polygon(Camping, {color: 'red'}).addTo(map);
+
+    function pointInsidePolygon(point, poly) {
+      var x = point[0], y = point[1];
+      var inside = false;
+      for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        var xi = poly[i][0], yi = poly[i][1];
+        var xj = poly[j][0], yj = poly[j][1];
+
+        var intersect = ((yi > y) != (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+        function updateMarkers(data) {
+    console.log("Données reçues :", data); // Vérifiez les données reçues côté client via WebSocket
+
+    markers.forEach(marker => {
+        map.removeLayer(marker);
+    });
+    markers = [];
+
+    data.forEach((coord) => {
+        console.log("Coordonnées du marqueur :", coord); // Vérifiez les coordonnées de chaque marqueur
+        let icon = greenIcon;
+        let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
+
+        if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
+        icon = redIcon;
+        popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+        }
+
+        const marker = L.marker([coord.latitude, coord.longitude], { icon: icon }).addTo(map)
+        .bindPopup(popupText);
+
+        console.log("Marqueur ajouté :", marker); // Vérifiez si le marqueur est ajouté correctement à la carte
+
+        // Vérifier si le marqueur est à l'intérieur du polygone
+        if (pointInsidePolygon([coord.latitude, coord.longitude], Camping)) {
+        if (icon === redIcon) {
+            icon = orangeIcon;
+        }
+        }
+
+        let bikeIndex = bikesCoordinates.findIndex(bike => bike.VeloID === coord.VeloID);
+
+        if (bikeIndex === -1) {
+        bikesCoordinates.push({
+            VeloID: coord.VeloID,
+            history: [{
+            latitude: coord.latitude,
+            longitude: coord.longitude
+            }]
+        });
+        } else {
+        bikesCoordinates[bikeIndex].history.push({
+            latitude: coord.latitude,
+            longitude: coord.longitude
+        });
+
+        if (bikesCoordinates[bikeIndex].history.length > 3) {
+            bikesCoordinates[bikeIndex].history.shift();
+        }
+
+        if (areLastThreePositionsSame(bikesCoordinates[bikeIndex].history) && icon === greenIcon) {
+            icon = purpleIcon;
+        }
+
+        if (areLastTwoPositionsNotSame(bikesCoordinates[bikeIndex].history) && icon === redIcon) {
+            if (!bikesAlerte.includes(coord.VeloID)) {
+            bikesAlerte.push(coord.VeloID);
+            }
+        }
+
+        if (bikesAlerte.includes(coord.VeloID) && icon === redIcon) {
+            icon = warningIcon;
+        }
+        }
+
+        marker.setIcon(icon);
+        markers.push(marker);
+    });
+
+    if (bikesAlerte.length > 0) {
+        displayAlertButton();
+    } else {
+        removeAlertButton();
+    }
+    }
+
+
+    function areLastThreePositionsSame(history) {
+      if (history.length < 3) {
+        return false;
+      }
+
+      let lastPosition = history[history.length - 1];
+      let secondLastPosition = history[history.length - 2];
+      let thirdLastPosition = history[history.length - 3];
+
+      if (
+        lastPosition.latitude === secondLastPosition.latitude &&
+        lastPosition.longitude === secondLastPosition.longitude &&
+        lastPosition.latitude === thirdLastPosition.latitude &&
+        lastPosition.longitude === thirdLastPosition.longitude
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function areLastTwoPositionsNotSame(history) {
+      if (history.length < 2) {
+        return false;
+      }
+
+      let lastPosition = history[history.length - 1];
+      let secondLastPosition = history[history.length - 2];
+
+      if (
+        lastPosition.latitude !== secondLastPosition.latitude ||
+        lastPosition.longitude !== secondLastPosition.longitude
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function displayAlertButton() {
+      let alertButtonDiv = document.getElementById('alertButtonDiv');
+      alertButtonDiv.innerHTML = `
+        <button onclick="resetAlerts()">Réinitialiser les alertes</button>
+      `;
+    }
+
+    function removeAlertButton() {
+      let alertButtonDiv = document.getElementById('alertButtonDiv');
+      alertButtonDiv.innerHTML = '';
+    }
+
+    function resetAlerts() {
+      bikesAlerte = [];
+      markers.forEach(marker => {
+        if (marker.options.icon === warningIcon) {
+          marker.setIcon(redIcon);
+        }
+      });
+      removeAlertButton();
+    }
+
+
+  </script>
+</body>
+</html>
