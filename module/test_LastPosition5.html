@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h1>Leaflet Map with Database Markers</h1>
+  <h1>Carte Leaflet avec marqueurs de base de données</h1>
   <div id="map"></div>
   <div id="alertButtonDiv"></div>
 
@@ -21,42 +21,43 @@
     let markers = [];
     let bikesCoordinates = [];
     let bikesAlerte = [];
+    let lastData = [];  // Stocke les dernières données reçues
 
-        // Créez une instance de WebSocket
-        const ws = new WebSocket('ws://192.168.64.210:3000/bikes');
+    // Créez une instance de WebSocket
+    const ws = new WebSocket('ws://192.168.64.210:3000/bikes');
 
-// Écoutez l'événement 'open' pour savoir quand la connexion WebSocket est établie
-ws.addEventListener('open', () => {
-  console.log('Connexion WebSocket établie');
-});
+    // Écoutez l'événement 'open' pour savoir quand la connexion WebSocket est établie
+    ws.addEventListener('open', () => {
+      console.log('Connexion WebSocket établie');
+    });
 
-// Écoutez l'événement 'message' pour recevoir les mises à jour des coordonnées des vélos
-ws.addEventListener('message', (event) => {
-const data = JSON.parse(event.data);
-// Assurez-vous que les données sont un tableau d'objets
-if (Array.isArray(data)) {
-updateMarkers(data);
-} else {
-console.error("Les données reçues ne sont pas au format attendu");
-}
-});
+    // Écoutez l'événement 'message' pour recevoir les mises à jour des coordonnées des vélos
+    ws.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      // Assurez-vous que les données sont un tableau d'objets
+      if (Array.isArray(data)) {
+        lastData = data;  // Met à jour les dernières données reçues
+        updateMarkers(data);
+      } else {
+        console.error("Les données reçues ne sont pas au format attendu");
+      }
+    });
 
-// Écoutez l'événement 'close' pour savoir quand la connexion WebSocket est fermée
-ws.addEventListener('close', () => {
-  console.log('Connexion WebSocket fermée');
-});
+    // Écoutez l'événement 'close' pour savoir quand la connexion WebSocket est fermée
+    ws.addEventListener('close', () => {
+      console.log('Connexion WebSocket fermée');
+    });
 
-// Créez la carte Leaflet et ajoutez la couche de tuiles
-map = L.map('map').setView([47.378418, 4.537693], 4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+    // Créez la carte Leaflet et ajoutez la couche de tuiles
+    map = L.map('map').setView([47.378418, 4.537693], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-// Écoutez l'événement 'load' de la carte pour vous assurer qu'elle est complètement chargée avant d'ajouter les marqueurs
-map.on('load', () => {
-  ws.send('ready');
-});
-
+    // Écoutez l'événement 'load' de la carte pour vous assurer qu'elle est complètement chargée avant d'ajouter les marqueurs
+    map.on('load', () => {
+      ws.send('ready');
+    });
 
     var greenIcon = L.icon({
       iconUrl: '../src/greenBike.png',
@@ -104,7 +105,7 @@ map.on('load', () => {
       [50.079710, 1.823973]
     ];
 
-    //affichage visuel du polygon sur la map
+    // Affichage visuel du polygone sur la carte
     var polygon = L.polygon(Camping, {color: 'red'}).addTo(map);
 
     function pointInsidePolygon(point, poly) {
@@ -121,82 +122,81 @@ map.on('load', () => {
       return inside;
     }
 
-        function updateMarkers(data) {
-    console.log("Données reçues :", data); // Vérifiez les données reçues côté client via WebSocket
+    function updateMarkers(data) {
+      console.log("Données reçues :", data); // Vérifiez les données reçues côté client via WebSocket
 
-    markers.forEach(marker => {
+      markers.forEach(marker => {
         map.removeLayer(marker);
-    });
-    markers = [];
+      });
+      markers = [];
 
-    data.forEach((coord) => {
+      data.forEach((coord) => {
         console.log("Coordonnées du marqueur :", coord); // Vérifiez les coordonnées de chaque marqueur
         let icon = greenIcon;
-        let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
+        let popupText = `Velo Numero : ${coord.bikeId}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
 
         if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
-        icon = redIcon;
-        popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+          icon = redIcon;
+          popupText = `Velo Numero : ${coord.bikeId}</br>Status : Non Loué`;
         }
 
         const marker = L.marker([coord.latitude, coord.longitude], { icon: icon }).addTo(map)
-        .bindPopup(popupText);
+          .bindPopup(popupText);
 
         console.log("Marqueur ajouté :", marker); // Vérifiez si le marqueur est ajouté correctement à la carte
 
         // Vérifier si le marqueur est à l'intérieur du polygone
         if (pointInsidePolygon([coord.latitude, coord.longitude], Camping)) {
-        if (icon === redIcon) {
+          if (icon === redIcon) {
             icon = orangeIcon;
-        }
+          }
         }
 
         let bikeIndex = bikesCoordinates.findIndex(bike => bike.VeloID === coord.VeloID);
 
         if (bikeIndex === -1) {
-        bikesCoordinates.push({
+          bikesCoordinates.push({
             VeloID: coord.VeloID,
             history: [{
-            latitude: coord.latitude,
-            longitude: coord.longitude
+              latitude: coord.latitude,
+              longitude: coord.longitude
             }]
-        });
+          });
         } else {
-        bikesCoordinates[bikeIndex].history.push({
+          bikesCoordinates[bikeIndex].history.push({
             latitude: coord.latitude,
             longitude: coord.longitude
-        });
+          });
 
-        if (bikesCoordinates[bikeIndex].history.length > 3) {
+          if (bikesCoordinates[bikeIndex].history.length > 3) {
             bikesCoordinates[bikeIndex].history.shift();
-        }
+          }
 
-        if (areLastThreePositionsSame(bikesCoordinates[bikeIndex].history) && icon === greenIcon) {
+          if (areLastThreePositionsSame(bikesCoordinates[bikeIndex].history) && icon === greenIcon) {
             icon = purpleIcon;
-        }
+          }
 
-        if (areLastTwoPositionsNotSame(bikesCoordinates[bikeIndex].history) && icon === redIcon) {
+          if (areLastTwoPositionsNotSame(bikesCoordinates[bikeIndex].history) && icon === redIcon) {
             if (!bikesAlerte.includes(coord.VeloID)) {
-            bikesAlerte.push(coord.VeloID);
+              bikesAlerte.push(coord.VeloID);
             }
-        }
+          }
 
-        if (bikesAlerte.includes(coord.VeloID) && icon === redIcon) {
+          if (bikesAlerte.includes(coord.VeloID) && icon === redIcon) {
             icon = warningIcon;
-        }
+          }
         }
 
         marker.setIcon(icon);
         markers.push(marker);
-    });
+      });
 
-    if (bikesAlerte.length > 0) {
+      if (bikesAlerte.length > 0) {
         displayAlertButton();
-    } else {
+      } else {
         removeAlertButton();
+      }
     }
-    }
-
 
     function areLastThreePositionsSame(history) {
       if (history.length < 3) {
@@ -259,6 +259,12 @@ map.on('load', () => {
       removeAlertButton();
     }
 
+    // Met à jour les marqueurs toutes les 6 secondes avec les dernières données reçues
+    setInterval(() => {
+      if (lastData.length > 0) {
+        updateMarkers(lastData);
+      }
+    }, 6000);
 
   </script>
 </body>
