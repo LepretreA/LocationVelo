@@ -19,7 +19,6 @@
   <script>
     let map;
     let markers = [];
-    let bikesCoordinates = [];
     let bikesAlerte = [];
 
     var greenIcon = L.icon({
@@ -68,9 +67,6 @@
       [50.079710, 1.823973]
     ];
 
-    //affichage visuel du polygon sur la map
-    //var polygon = L.polygon(Camping, {color: 'red'}).addTo(map);
-
     function pointInsidePolygon(point, poly) {
       var x = point[0], y = point[1];
       var inside = false;
@@ -86,92 +82,83 @@
     }
 
     function updateMarkers() {
-      fetch('http://192.168.64.210:3000/Proprietaire')
-        .then((response) => {
-          return response.json();
-        })
-        .then((data) => {
-          if (!map) {
-            map = L.map('map').setView([data[0].latitude, data[0].longitude], 5);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-            var polygon = L.polygon(Camping, {color: 'black'}).addTo(map);
+  fetch('http://192.168.64.210:3080/Proprietaire')
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      if (!map) {
+        map = L.map('map').setView([data[0].latitude, data[0].longitude], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        var polygon = L.polygon(Camping, {color: 'black'}).addTo(map);
+      }
+
+      markers.forEach(marker => {
+        map.removeLayer(marker);
+      });
+      markers = [];
+
+      data.forEach((coord) => {
+        let icon = greenIcon;
+        let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
+
+        if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
+          icon = redIcon;
+          popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+        }
+
+        const marker = L.marker([coord.latitude, coord.longitude], { icon: icon }).addTo(map)
+          .bindPopup(popupText);
+
+        // Vérifier si le marqueur est à l'intérieur du polygone
+        if (pointInsidePolygon([coord.latitude, coord.longitude], Camping)) {
+          if (icon === redIcon) {
+            icon = orangeIcon;
           }
+        }
 
-          markers.forEach(marker => {
-            map.removeLayer(marker);
-          });
-          markers = [];
-
-          data.forEach((coord) => {
-            let icon = greenIcon;
-            let popupText = `Velo Numero : ${coord.VeloID}</br>Nom : ${coord.Nom}</br>Prenom : ${coord.Prenom}`;
-
-            if (coord.IDUser === null || coord.Nom === null || coord.Prenom === null) {
-              icon = redIcon;
-              popupText = `Velo Numero : ${coord.VeloID}</br>Status : Non Loué`;
+        // Récupérer l'historique des positions du vélo
+        fetch(`http://192.168.64.210:3080/getBikeHistory/${coord.VeloID}`)
+          .then((response) => {
+            return response.json();
+          })
+          .then((history) => {
+            if (areLastThreePositionsSame(history) && icon === greenIcon) {
+              icon = purpleIcon;
             }
 
-            const marker = L.marker([coord.latitude, coord.longitude], { icon: icon }).addTo(map)
-              .bindPopup(popupText);
-
-            // Vérifier si le marqueur est à l'intérieur du polygone
-            if (pointInsidePolygon([coord.latitude, coord.longitude], Camping)) {
-              if (icon === redIcon) {
-                icon = orangeIcon;
+            if (areLastTwoPositionsNotSame(history) && icon === redIcon) {
+              if (!bikesAlerte.includes(coord.VeloID)) {
+                bikesAlerte.push(coord.VeloID);
               }
             }
 
-            let bikeIndex = bikesCoordinates.findIndex(bike => bike.VeloID === coord.VeloID);
-
-            if (bikeIndex === -1) {
-              bikesCoordinates.push({
-                VeloID: coord.VeloID,
-                history: [{
-                  latitude: coord.latitude,
-                  longitude: coord.longitude
-                }]
-              });
-            } else {
-              bikesCoordinates[bikeIndex].history.push({
-                latitude: coord.latitude,
-                longitude: coord.longitude
-              });
-
-              if (bikesCoordinates[bikeIndex].history.length > 3) {
-                bikesCoordinates[bikeIndex].history.shift();
-              }
-
-              if (areLastThreePositionsSame(bikesCoordinates[bikeIndex].history) && icon === greenIcon) {
-                icon = purpleIcon;
-              }
-
-              if (areLastTwoPositionsNotSame(bikesCoordinates[bikeIndex].history) && icon === redIcon) {
-                if (!bikesAlerte.includes(coord.VeloID)) {
-                  bikesAlerte.push(coord.VeloID);
-                }
-              }
-
-              if (bikesAlerte.includes(coord.VeloID) && icon === redIcon) {
-                icon = warningIcon;
-              }
+            if (bikesAlerte.includes(coord.VeloID) && icon === redIcon) {
+              icon = warningIcon;
             }
 
             marker.setIcon(icon);
-            markers.push(marker);
+          })
+          .catch((error) => {
+            console.error('Erreur lors de la récupération de l\'historique des positions du vélo :', error);
           });
 
-          if (bikesAlerte.length > 0) {
-            displayAlertButton();
-          } else {
-            removeAlertButton();
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching markers:', error);
-        });
-    }
+        markers.push(marker);
+      });
+
+      if (bikesAlerte.length > 0) {
+        displayAlertButton();
+      } else {
+        removeAlertButton();
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching markers:', error);
+    });
+}
+
 
     function areLastThreePositionsSame(history) {
       if (history.length < 3) {
@@ -227,8 +214,8 @@
     function resetAlerts() {
       bikesAlerte = [];
       markers.forEach(marker => {
-        if (marker.options.icon === warningIcon) {
-          marker.setIcon(redIcon);
+        if (marker.options.icon === redIcon) {
+          marker.setIcon(warningIcon);
         }
       });
       removeAlertButton();
@@ -237,45 +224,6 @@
     updateMarkers();
     setInterval(updateMarkers, 6000);
 
-    fetch('http://192.168.64.210:3000/markers')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erreur HTTP, statut ' + response.status);
-        }
-        return response.json();
-      })
-      .catch(error => {
-        console.error('Erreur lors de la récupération des données:', error);
-      });
-
-    // Coordonnées du polygone (ici le camping)
-    var Camping = [
-      [50.079239, 1.822605],
-      [50.079896, 1.822127],
-      [50.079981, 1.822355],
-      [50.080548, 1.821919],
-      [50.080841, 1.821919],
-      [50.081363, 1.821585],
-      [50.081540, 1.822307],
-      [50.079710, 1.823973]
-    ];
-
-    //affichage visuel du polygon sur la map
-    var polygon = L.polygon(Camping, {color: 'black'}).addTo(map);
-
-    function pointInsidePolygon(point, poly) {
-      var x = point[0], y = point[1];
-      var inside = false;
-      for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        var xi = poly[i][0], yi = poly[i][1];
-        var xj = poly[j][0], yj = poly[j][1];
-
-        var intersect = ((yi > y) != (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
   </script>
 </body>
 </html>
