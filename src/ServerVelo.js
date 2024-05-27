@@ -3,7 +3,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-//const { louerVelo } = require('../locavelo/src/fonction');
 const { louerVelo, rendreVelo, checkUserCurrentLocation } = require('../locavelo/src/fonction');
 const app = express();
 const port = 3001;
