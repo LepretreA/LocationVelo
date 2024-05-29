@@ -36,6 +36,42 @@ db.connect((err) => {
   console.log('Connecté à la base de données MySQL');
 });
 
+function updateBikeCoordinatesFromLocationTable() {
+  let sql = 'SELECT Velo.ID, Velo.latitude, Velo.longitude FROM Velo JOIN Location ON Velo.ID = Location.VeloID';
+
+  db.query(sql, (err, result) => {
+    if (err) throw err;
+
+    result.forEach(row => {
+      let bikeIndex = bikesCoordinates.findIndex(bike => bike.VeloID === row.ID);
+
+      if (bikeIndex === -1) {
+        bikesCoordinates.push({
+          VeloID: row.ID,
+          history: [{
+            latitude: row.latitude,
+            longitude: row.longitude
+          }]
+        });
+      } else {
+        bikesCoordinates[bikeIndex].history.push({
+          latitude: row.latitude,
+          longitude: row.longitude
+        });
+
+        if (bikesCoordinates[bikeIndex].history.length > 3) {
+          bikesCoordinates[bikeIndex].history.shift();
+        }
+      }
+    });
+
+    console.log('État du tableau bikesCoordinates après la mise à jour depuis la table Location :', bikesCoordinates);
+  });
+}
+
+
+setInterval(updateBikeCoordinatesFromLocationTable, 6000);
+
 app.get('/SelectUser', (req, res) => {
   console.log('Requête GET reçue : /SelectUser'); // Vérifiez si la requête GET est reçue
   let sql = 'SELECT * FROM User';
@@ -47,7 +83,7 @@ app.get('/SelectUser', (req, res) => {
 
 app.get('/Proprietaire', (req, res) => {
   //console.log('Requête GET reçue : /Proprietaire'); // Vérifiez si la requête GET est reçue
-  let sql = 'SELECT DISTINCT Velo.latitude, Velo.longitude, VeloID, UserID, User.Nom, User.Prenom FROM Location JOIN User ON Location.UserID = User.ID JOIN Velo ON Location.VeloID = Velo.ID WHERE Location.UserID IS NOT NULL UNION SELECT DISTINCT Velo.latitude, Velo.longitude, VeloID, UserID, User.Nom, User.Prenom FROM Velo LEFT JOIN Location ON Velo.ID = Location.VeloID LEFT JOIN User ON Location.UserID = User.ID WHERE Location.UserID IS NULL ORDER BY VeloID ASC;';
+  let sql = 'SELECT DISTINCT Velo.latitude, Velo.longitude, Velo.ID AS VeloID, Location.UserID AS UserID, User.Nom, User.Prenom FROM Velo LEFT JOIN Location ON Velo.ID = Location.VeloID JOIN User ON Location.UserID = User.ID WHERE Location.UserID IS NOT NULL UNION SELECT DISTINCT Velo.latitude, Velo.longitude, Velo.ID AS VeloID, NULL AS UserID, NULL AS Nom, NULL AS Prenom FROM Velo LEFT JOIN Location ON Velo.ID = Location.VeloID WHERE Location.VeloID IS NULL ORDER BY VeloID ASC;';
   db.query(sql, (err, result) => {
     if (err) throw err;
     res.json(result);
@@ -91,8 +127,6 @@ app.post('/updateBikePosition', (req, res) => {
   console.log('État du tableau bikesCoordinates après la mise à jour :', bikesCoordinates); // Afficher l'état du tableau après la mise à jour
   console.log('Adresse mémoire de bikesCoordinates dans /updateBikePosition :', JSON.stringify(bikesCoordinates));
 
-
-  
   res.json({ success: true });
 });
 
@@ -109,8 +143,6 @@ app.get('/getBikeHistory/:VeloID', (req, res) => {
   console.log(`Historique de position pour le vélo avec l'ID ${bikeID} :`, bike.history);
   res.json(bike.history);
 });
-
-
 
 app.listen(port, () => {
   console.log(`Serveur démarré sur http://localhost:${port}`);

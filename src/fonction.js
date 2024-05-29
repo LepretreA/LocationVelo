@@ -59,7 +59,6 @@ const checkUserCurrentLocation = ({ nom, prenom, telephone }, callback) => {
 };
 
 
-
 const getVeloId = (idVelo, callback) => {
     const sql = 'SELECT ID FROM Velo WHERE ID = ?'; 
     connection.query(sql, [idVelo], (err, result) => {
@@ -95,8 +94,6 @@ const checkVeloAvailability = (veloId, callback) => {
         }
     });
 };
-
-
 
 
 const louerVelo = (nom, prenom, telephone, idVelo, codeRetour, callback) => {
