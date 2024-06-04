@@ -40,14 +40,14 @@ Création du MCD (Modèle Conceptuel de Données) et de la BDD.
 Création des API CRUD pour gérer les données des vélos et des campeurs.
 Création des API de location pour gérer les locations.
 <b><h3>🧱 Description structurelle du système<b><h3>
-<b><h3>🛠️ Principaux constituants</b></h3>
+<h3><b></b>🛠️ Principaux constituants</b></h3>
 MariaDB (sous Linux).
 Serveur BACK-END Node.js.
 Interface WEB d'administration (React.js).
 Génération et impression de QR Codes.
 Interface WEB client (React.js).
 Lecture des QR Codes.
-<b><h3>🛠️ Inventaire des matériels et outils logiciels à mettre en œuvre par le candidat</h3></b>
+<h3><b>🛠️ Inventaire des matériels et outils logiciels à mettre en œuvre par le candidat</h3></b>
 Module M2M embarqué (protocole : LoRaWAN ou Sigfox à comparer).
 Module GPS.
 Alimentation autonome.
