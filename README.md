@@ -47,7 +47,7 @@ Interface WEB d'administration (React.js).
 Génération et impression de QR Codes.
 Interface WEB client (React.js).
 Lecture des QR Codes.
-<b><h3>🛠️ Inventaire des matériels et outils logiciels à mettre en œuvre par le candidat<b><h3>
+<b><h3>🛠️ Inventaire des matériels et outils logiciels à mettre en œuvre par le candidat</h3></b>
 Module M2M embarqué (protocole : LoRaWAN ou Sigfox à comparer).
 Module GPS.
 Alimentation autonome.
