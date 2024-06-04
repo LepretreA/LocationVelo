@@ -1,4 +1,4 @@
-#🏕️🚲 Projet BTS Systèmes Numériques : Location de vélos au camping "Les portes de la baie de Somme"
+'#'🏕️🚲 Projet BTS Systèmes Numériques : Location de vélos au camping "Les portes de la baie de Somme"
 🏫 Lycée La Providence, Amiens (Session 2024)
 📋 Présentation du projet
 M. Durand, le nouveau propriétaire du camping "Les portes de la baie de Somme", a un projet innovant en tête : proposer un service de location de vélos via un système de QR Code avec identification des vélos sur une carte grâce à une puce GPS et une communication M2M. Nous sommes fiers de travailler sur ce projet en tant qu'étudiants en BTS Systèmes Numériques, option A Informatique et Réseaux.
