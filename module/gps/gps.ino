@@ -4,7 +4,6 @@ TinyGPS gps;
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
-  Serial2.begin(9600);
   delay(500);
   
 }
