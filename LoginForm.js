@@ -1,149 +1,49 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// LoginForm.js
+import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import './App.css';
 
-function LouerVeloForm() {
-  const navigate = useNavigate();
-  const { idVelo } = useParams();
-  const [formData, setFormData] = useState({
-    idVelo: idVelo || '',
-    nom: '',
-    prenom: '',
-    telephone: '',
-    codeRetour: ''
-  });
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [submitted, setSubmitted] = useState(false); // Nouvel état pour gérer la soumission réussie
-
-  const checkVeloStatus = useCallback(async (idVelo) => {
-    try {
-      const response = await axios.get(`http://192.168.65.107:3001/checkVelo/${idVelo}`);
-      if (!response.data.isAvailable) {
-        navigate(`/return?idVelo=${idVelo}`);
-      }
-    } catch (error) {
-      console.error('Erreur lors de la vérification du vélo:', error);
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    if (idVelo) {
-      checkVeloStatus(idVelo);
-    }
-  }, [idVelo, checkVeloStatus]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+function LoginForm() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate(); // Utiliser useNavigate pour la redirection
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  try {
-    const userCheckResponse = await axios.get('http://192.168.65.107:3001/checkLocation', {
-      params: {
-        nom: formData.nom,
-        prenom: formData.prenom,
-        telephone: formData.telephone
-      }
-    });
-
-    if (userCheckResponse.data.hasLocation) {
-      setErrorMessage('Vous avez déjà une location en cours.');
-      setSuccessMessage('');
-      setSubmitted(true); // Mettre à jour l'état de soumission réussie
-      return;
-    }
-
-    const response = await axios.post('http://192.168.65.107:3001/louerVelo', formData);
-    setSuccessMessage(response.data.message);
-    setErrorMessage('');
-    setSubmitted(true); // Mettre à jour l'état de soumission réussie
-    setFormData({
-      idVelo: '',
-      nom: '',
-      prenom: '',
-      telephone: '',
-      codeRetour: ''
-    });
-  } catch (error) {
-    if (error.response && error.response.data && error.response.data.error) {
-      if (error.response.data.error === 'Vous avez déjà une location en cours') {
-        navigate(`/return?idVelo=${formData.idVelo}`);
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${window.location.protocol}//${window.location.hostname}:3001/login`, { username, password });
+      if (response.data.success) {
+        navigate('/map'); // Rediriger vers /map
       } else {
-        setErrorMessage(error.response.data.error);
+        alert('Identifiants incorrects');
       }
-    } else {
-      setErrorMessage('Erreur lors de la requête POST');
+    } catch (error) {
+      console.error('Erreur de connexion :', error);
+      alert('Une erreur est survenue lors de la connexion');
     }
-    setSuccessMessage('');
-  }
-};
-
+  };
 
   return (
     <div className="login-container">
-      <h2>Location</h2>
-      {!submitted && ( // Conditionner l'affichage du formulaire
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            id="idVelo"
-            name="idVelo"
-            value={formData.idVelo}
-            onChange={handleChange}
-            placeholder="ID du vélo"
-            readOnly
-            required
-          />
-          <input
-            type="text"
-            id="nom"
-            name="nom"
-            value={formData.nom}
-            onChange={handleChange}
-            placeholder="Nom"
-            required
-          />
-          <input
-            type="text"
-            id="prenom"
-            name="prenom"
-            value={formData.prenom}
-            onChange={handleChange}
-            placeholder="Prénom"
-            required
-          />
-          <input
-            type="text"
-            id="telephone"
-            name="telephone"
-            value={formData.telephone}
-            onChange={handleChange}
-            placeholder="Téléphone"
-            required
-          />
-          <input
-            type="text"
-            id="codeRetour"
-            name="codeRetour"
-            value={formData.codeRetour}
-            onChange={handleChange}
-            placeholder="Code de retour(4 chiffres)"
-            required
-            maxLength={4}
-            minLength={4}
-            pattern="[0-9]*"
-          />
-          <button type="submit">Louer le vélo</button>
-        </form>
-      )}
-     
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+      <h2>Connexion</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Nom d'utilisateur"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button type="submit">Se connecter</button>
+      </form>
     </div>
   );
 }
 
-export default LouerVeloForm;
+export default LoginForm;
